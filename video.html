@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Full-Screen Text and Holes</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    svg {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" id="svgContainer">
+    <!-- Видео -->
+    <foreignObject x="0" y="0" width="100%" height="100%">
+      <video autoplay muted loop style="width: 100%; height: 100%; object-fit: cover;">
+        <source src="video.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+    </foreignObject>
+
+    <!-- Маска -->
+    <mask id="textMask">
+      <rect x="0" y="0" width="100%" height="100%" fill="white" />
+    </mask>
+    <rect x="0" y="0" width="100%" height="100%" fill="black" mask="url(#textMask)" />
+    <g id="contentGroup"></g>
+  </svg>
+
+  <script>
+    function generateSentenceWithHoles() {
+      let svgContainer = document.getElementById('svgContainer');
+      let mask = document.getElementById('textMask');
+      let contentGroup = document.getElementById('contentGroup');
+      let viewBoxWidth = window.innerWidth;
+      let viewBoxHeight = window.innerHeight;
+      svgContainer.setAttribute("viewBox", `0 0 ${viewBoxWidth} ${viewBoxHeight}`);
+      mask.innerHTML = `<rect x="0" y="0" width="${viewBoxWidth}" height="${viewBoxHeight}" fill="white" />`;
+      contentGroup.innerHTML = '';
+
+      let sentence = [
+        { text: "We’re here", holeWidth: 450 },
+        { text: "to make healthy", holeWidth: 300 },
+        { text: "living effortless,", holeWidth: 150 },
+        { text: "so you can live longer and happier.", holeWidth: 400 }
+      ];
+
+      let lineHeight = viewBoxHeight * 0.08;
+      let padding = viewBoxWidth * 0.02;
+      let currentX = padding;
+      let currentY = lineHeight;
+
+      sentence.forEach(({ text, holeWidth }) => {
+        let words = text.split(' ');
+
+        words.forEach((word) => {
+          let tempDiv = document.createElement('div');
+          tempDiv.style.position = 'absolute';
+          tempDiv.style.visibility = 'hidden';
+          tempDiv.style.fontSize = `${lineHeight * 0.6}px`;
+          tempDiv.style.lineHeight = `${lineHeight}px`;
+          tempDiv.style.whiteSpace = 'nowrap';
+          tempDiv.textContent = word;
+          document.body.appendChild(tempDiv);
+
+          let wordWidth = (tempDiv.offsetWidth / window.innerWidth) * viewBoxWidth;
+         
+          if (currentX + wordWidth + padding > viewBoxWidth) {           
+            currentX = padding;
+            currentY += lineHeight;
+          }
+
+          let textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          textElement.setAttribute('x', currentX);
+          textElement.setAttribute('y', currentY);
+          textElement.setAttribute('font-family', 'Arial');
+          textElement.setAttribute('font-size', `${lineHeight * 0.6}`);
+          textElement.setAttribute('fill', 'white');
+          textElement.textContent = word;
+          contentGroup.appendChild(textElement);
+
+          currentX += wordWidth + padding;
+
+          document.body.removeChild(tempDiv);
+        });
+
+        let rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', currentX);
+        rect.setAttribute('y', currentY - lineHeight * 0.8);
+        rect.setAttribute('width', holeWidth);
+        rect.setAttribute('height', lineHeight * 0.8);
+        rect.setAttribute('fill', 'black');
+        mask.appendChild(rect);
+
+        currentX += holeWidth + padding;
+      });
+    }
+
+    window.addEventListener('load', generateSentenceWithHoles);
+    window.addEventListener('resize', generateSentenceWithHoles);
+  </script>
+</body>
+</html>
